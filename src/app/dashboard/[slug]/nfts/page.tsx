@@ -199,6 +199,20 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
                         )}
                     </h1>
                 </div>
+
+                {openedCollection && (
+                    <a
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checking out my ${openedCollection} NFTs on Altair! 💎🚀\n\n`)}&url=${encodeURIComponent(`https://altair.app/gallery/${slug}/${openedCollection}`)}&hashtags=MultiversX,NFT,Altair`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-auto flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-white border border-slate-800 hover:bg-slate-900 transition-colors shadow-lg active:scale-95"
+                    >
+                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
+                        <span className="text-sm font-bold hidden sm:inline">Share Collection</span>
+                    </a>
+                )}
             </div>
 
             {/* Tabs Navigation (Pill Style) - Hide when folder is open? Or keep to switch context? Keep but maybe disabled or hidden for cleanliness */}

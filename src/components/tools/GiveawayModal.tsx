@@ -91,13 +91,13 @@ export function GiveawayModal({ winnerAddress, herotag, onClose, onRedraw, type 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4 sm:pb-4">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
             <motion.div
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.5, opacity: 0 }}
+                initial={{ scale: 0.5, opacity: 0, y: -50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.5, opacity: 0, y: 50 }}
                 className="relative w-full max-w-md bg-[#0F172A] border border-[#22D3EE]/30 rounded-3xl p-8 shadow-2xl overflow-hidden"
             >
                 {/* Background Glow Effect */}
