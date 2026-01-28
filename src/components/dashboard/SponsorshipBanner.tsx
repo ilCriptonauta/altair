@@ -64,17 +64,17 @@ export function SponsorshipBanner() {
                     animate={{ rotateX: 0, opacity: 1 }}
                     exit={{ rotateX: -90, opacity: 0 }}
                     transition={{ duration: 0.5, ease: "easeInOut" }}
-                    className="relative w-full rounded-2xl border bg-[#1E293B]/80 p-4 backdrop-blur-sm mb-8 flex items-center gap-4 shadow-[0_0_15px_rgba(0,0,0,0.2)] group overflow-hidden perspective-1000"
+                    className="relative w-full rounded-2xl border bg-[#1E293B]/80 p-3 sm:p-4 backdrop-blur-sm mb-6 sm:mb-8 flex items-center gap-3 sm:gap-4 shadow-[0_0_15px_rgba(0,0,0,0.2)] group overflow-hidden perspective-1000"
                     style={{ borderColor: currentBanner.color }}
                 >
                     {/* Background Glow */}
                     <div
-                        className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 blur-[50px] rounded-full pointer-events-none transition-colors duration-500"
+                        className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-24 h-24 sm:w-32 sm:h-32 blur-[40px] sm:blur-[50px] rounded-full pointer-events-none transition-colors duration-500"
                         style={{ backgroundColor: `${currentBanner.color}20` }} // 10-20% opacity
                     />
 
                     {/* Logo Area */}
-                    <div className="shrink-0 relative z-10 bg-white/5 rounded-xl p-2 h-14 w-14 flex items-center justify-center">
+                    <div className="shrink-0 relative z-10 bg-white/5 rounded-xl p-1.5 sm:p-2 h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center">
                         {currentBanner.isImage && currentBanner.logo ? (
                             <Image
                                 src={currentBanner.logo}
@@ -84,24 +84,24 @@ export function SponsorshipBanner() {
                                 className="h-full w-full object-contain rounded-lg"
                             />
                         ) : (
-                            <HelpCircle className="h-8 w-8 text-slate-400" />
+                            <HelpCircle className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" />
                         )}
                     </div>
 
                     {/* Text */}
-                    <div className="flex-1 relative z-10">
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-white font-bold text-lg leading-tight">
+                    <div className="flex-1 relative z-10 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <h3 className="text-white font-bold text-base sm:text-lg leading-tight truncate">
                                 {currentBanner.name}
                             </h3>
                             <span
-                                className="px-2 py-0.5 rounded text-[10px] text-white font-bold uppercase tracking-wider transition-colors duration-500"
+                                className="px-1.5 py-0.5 sm:px-2 rounded text-[9px] sm:text-[10px] text-white font-bold uppercase tracking-wider transition-colors duration-500 shrink-0"
                                 style={{ backgroundColor: currentBanner.color }}
                             >
                                 Sponsor
                             </span>
                         </div>
-                        <p className="text-slate-300 text-sm mt-0.5">
+                        <p className="text-slate-300 text-xs sm:text-sm mt-0.5 sm:mt-1 truncate sm:whitespace-normal line-clamp-1 sm:line-clamp-none">
                             {currentBanner.description}
                         </p>
                     </div>
@@ -115,10 +115,10 @@ export function SponsorshipBanner() {
                         aria-label={`Visit ${currentBanner.name}`}
                     />
 
-                    {/* Close Button */}
+                    {/* Close Button - Larger touch target */}
                     <button
                         onClick={handleClose}
-                        className="relative z-10 p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/10 shrink-0"
+                        className="relative z-10 -mr-1 p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/10 shrink-0"
                         title="Dismiss"
                         style={{ zIndex: 20 }}
                     >

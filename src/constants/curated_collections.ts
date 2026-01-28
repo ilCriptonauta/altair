@@ -58,4 +58,9 @@ export const CURATED_COLLECTION_IDS = [
     'DINOVOX-cb2297', // DinoVox
     'OLVGROVE-90fae5', // OlvGroove
     'AGXR-5b160b', // AGXR
+    'VRSKRAAD-d3e816', // VRSKRAAD
+    'MINIKRAAD-bff059', // MiniKraad
+    'VRSENYATH-4f2c95', // VRSenyath
+    'VRSENYATH2-6b632c', // VRSenyath2
+
 ];

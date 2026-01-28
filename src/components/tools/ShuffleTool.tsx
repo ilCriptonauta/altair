@@ -175,7 +175,7 @@ export function ShuffleTool() {
                                 href={`https://oox.art/marketplace/nfts/${selectedNFT.identifier}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#FBBF24] hover:bg-[#F59E0B] text-[#0F172A] font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/20"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 rounded-xl bg-[#FBBF24] hover:bg-[#F59E0B] text-[#0F172A] font-bold transition-all transform active:scale-[0.98] shadow-lg shadow-orange-500/20 text-sm sm:text-base"
                             >
                                 <ExternalLink className="h-4 w-4" />
                                 View on OOX
@@ -185,7 +185,7 @@ export function ShuffleTool() {
                                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just discovered ${selectedNFT.name} from ${selectedNFT.collection} collection! 🎲🔥\n\nFound using the Shuffle Tool on Altair.\n\n`)}&url=${encodeURIComponent(`https://oox.art/marketplace/nfts/${selectedNFT.identifier}`)}&hashtags=MultiversX,NFT,Altair`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-black hover:bg-slate-900 text-white font-bold transition-all hover:scale-105 active:scale-95 shadow-lg border border-slate-800"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 rounded-xl bg-black hover:bg-slate-900 text-white font-bold transition-all transform active:scale-[0.98] shadow-lg border border-slate-800 text-sm sm:text-base"
                             >
                                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
