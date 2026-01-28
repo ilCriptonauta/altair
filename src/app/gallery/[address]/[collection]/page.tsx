@@ -1,7 +1,6 @@
 import { getCollectionNFTs, getAccountDetails } from "@/lib/mx-api";
-import { NFTCard } from "@/components/nfts/NFTCard";
+import { GalleryClientView } from "@/components/gallery/GalleryClientView";
 import { Layers, User } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 export const revalidate = 60; // Revalidate every minute
@@ -49,23 +48,29 @@ export default async function GalleryPage({
             <header className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="h-8 w-8 relative">
-                            {/* Simple Logo Placeholder */}
-                            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400 to-purple-600 rounded-lg transform rotate-3" />
-                            <div className="absolute inset-0 bg-[#0F172A] rounded-lg m-0.5" />
-                            <div className="absolute inset-0 flex items-center justify-center font-black text-xs text-transparent bg-clip-text bg-gradient-to-tr from-cyan-400 to-purple-600">
-                                A
-                            </div>
+                        <div className="h-10 w-10 text-white">
+                            {/* Logo SVG */}
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-full h-full drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+                            >
+                                <path
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                    stroke="none"
+                                />
+                            </svg>
                         </div>
-                        <span className="font-bold text-lg tracking-tight">Altair</span>
+                        <span className="font-black text-xl tracking-tight">Altair</span>
                     </Link>
 
                     <a
-                        href="https://altair.app"
+                        href="https://altairstar.vercel.app"
                         target="_blank"
-                        className="px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-xs font-bold transition-colors border border-white/5"
+                        className="px-5 py-2.5 rounded-full bg-white text-[#020617] text-sm font-bold transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
                     >
-                        Get Altair
+                        Visit Altair
                     </a>
                 </div>
             </header>
@@ -88,25 +93,8 @@ export default async function GalleryPage({
                 </div>
 
                 {/* Grid */}
-                {nfts.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-y-8 gap-x-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                        {nfts.map((nft) => (
-                            <div key={nft.identifier} className="transform hover:scale-[1.02] transition-transform duration-300">
-                                <NFTCard nft={nft} />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-                        <p>No NFTs found in this collection.</p>
-                    </div>
-                )}
+                <GalleryClientView nfts={nfts} />
             </main>
-
-            {/* Footer */}
-            <footer className="py-8 text-center text-slate-600 text-sm border-t border-white/5 mt-12 bg-slate-950/50">
-                <p>Powered by <a href="https://altair.app" className="text-slate-400 hover:text-white transition-colors">Altair</a> &bull; MultiversX Network</p>
-            </footer>
         </div>
     );
 }
