@@ -16,6 +16,15 @@ const BANNERS = [
         isImage: true
     },
     {
+        id: 'versus',
+        name: 'Versus Projects',
+        description: "Options... since '22",
+        link: 'https://linktr.ee/versus_projects',
+        logo: '/versus-logo.jpg',
+        color: '#FBBF24', // Amber
+        isImage: true
+    },
+    {
         id: 'onionx',
         name: 'OnionXLabs',
         description: 'MultiversX builders.',
@@ -23,15 +32,6 @@ const BANNERS = [
         logo: '/onionx-logo.jpg',
         color: '#22D3EE', // Cyan
         isImage: true
-    },
-    {
-        id: 'your-project',
-        name: 'You Project Here',
-        description: 'Contact us to partner.',
-        link: '#',
-        logo: null,
-        color: '#FBBF24', // Amber
-        isImage: false
     }
 ];
 
