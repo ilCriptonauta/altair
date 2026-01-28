@@ -30,7 +30,18 @@ export default async function GalleryPage({
     }
 
     // Fetch NFTs
-    const nfts = await getCollectionNFTs(targetAddress, collection);
+    let nfts = await getCollectionNFTs(targetAddress, collection);
+    let displayCollection = collection;
+
+    // Fallback: If no NFTs found, try upper-case collection ID (common issue with URLs)
+    if (nfts.length === 0) {
+        const upperCollection = collection.toUpperCase();
+        const upperNfts = await getCollectionNFTs(targetAddress, upperCollection);
+        if (upperNfts.length > 0) {
+            nfts = upperNfts;
+            displayCollection = upperCollection;
+        }
+    }
 
     return (
         <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-purple-500/30">
@@ -67,7 +78,7 @@ export default async function GalleryPage({
                     </div>
 
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
-                        {collection}
+                        {displayCollection}
                     </h1>
 
                     <div className="flex items-center gap-2 text-slate-400 bg-slate-900/50 px-4 py-1.5 rounded-full border border-slate-800">

@@ -202,7 +202,7 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
 
                 {openedCollection && (
                     <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checking out my ${openedCollection} NFTs on Altair! 💎🚀\n\n`)}&url=${encodeURIComponent(`https://altair.app/gallery/${slug}/${openedCollection}`)}&hashtags=MultiversX,NFT,Altair`}
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checking out my ${openedCollection} NFTs on Altair! 💎🚀\n\n`)}&url=${encodeURIComponent(`https://altairstar.vercel.app/gallery/${slug}/${openedCollection}`)}&hashtags=MultiversX,NFT,Altair`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="ml-auto flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-white border border-slate-800 hover:bg-slate-900 transition-colors shadow-lg active:scale-95"
