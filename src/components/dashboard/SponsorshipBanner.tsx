@@ -111,7 +111,7 @@ export function SponsorshipBanner() {
                         href={currentBanner.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="absolute inset-0 z-0"
+                        className="absolute inset-0 z-20"
                         aria-label={`Visit ${currentBanner.name}`}
                     />
 
@@ -120,7 +120,7 @@ export function SponsorshipBanner() {
                         onClick={handleClose}
                         className="relative z-10 -mr-1 p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/10 shrink-0"
                         title="Dismiss"
-                        style={{ zIndex: 20 }}
+                        style={{ zIndex: 30 }}
                     >
                         <X className="h-5 w-5" />
                     </button>

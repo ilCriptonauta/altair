@@ -21,7 +21,8 @@ export interface AccountDetails {
 
 export async function getXSpotlightProfile(address: string): Promise<{ image: string } | null> {
     try {
-        const response = await fetch(`https://id-api.multiversx.com/api/v1/users/${address}`);
+        // Use local proxy to bypass CORS
+        const response = await fetch(`/api/xspotlight/${address}`);
         if (!response.ok) return null;
 
         const data = await response.json();
