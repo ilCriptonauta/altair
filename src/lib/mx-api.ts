@@ -349,13 +349,18 @@ export interface NFT {
 }
 
 export async function getNFTs(address: string, size: number = 100, from: number = 0): Promise<NFT[]> {
+    const url = `${API_URL}/accounts/${address}/nfts?size=${size}&from=${from}&type=NonFungibleESDT,SemiFungibleESDT,MetaESDT`;
     try {
-        const response = await fetch(`${API_URL}/accounts/${address}/nfts?size=${size}&from=${from}&type=NonFungibleESDT,SemiFungibleESDT,MetaESDT`, { cache: 'no-store' });
-        if (!response.ok) return [];
+        console.log(`Fetching NFTs from: ${url}`);
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+            console.error(`Failed response from ${url}: ${response.status} ${response.statusText}`);
+            return [];
+        }
         const data = await response.json();
         return data as NFT[];
     } catch (error) {
-        console.error("Error fetching NFTs:", error);
+        console.error(`Error fetching NFTs from ${url}:`, error);
         return [];
     }
 }
@@ -751,7 +756,7 @@ export async function getMarketMovers(): Promise<{ gainers: MarketMover[], loser
             .filter((pair: any) => {
                 // Filter out pairs with low volume or invalid data to avoid noise
                 return pair.state === 'active' &&
-                    pair.volume24h > 1000 && // Min $1000 daily volume
+                    pair.volume24h > 10000 && // Min $10k daily volume
                     pair.basePrice > 0 &&
                     pair.basePrevious24hPrice > 0;
             })

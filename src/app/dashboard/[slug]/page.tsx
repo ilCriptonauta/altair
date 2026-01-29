@@ -50,20 +50,26 @@ export default function DashboardPage({ params }: { params: Promise<{ slug: stri
         async function fetchData() {
             try {
                 const account = await getAccountDetails(slug);
+
+                if (account && account.address !== slug) {
+                    router.replace(`/dashboard/${account.address}`);
+                    return;
+                }
+
                 setData(account);
                 setAddress(account ? account.address : slug);
 
                 if (account) {
-                    // Fetch Chubber Collection
                     const chubbers = await getCollectionNFTs(account.address, "CHBONX-3e0201");
                     setChubberNfts(chubbers);
                 }
+                setLoading(false);
             } catch (err) {
                 console.error("Failed to fetch dashboard data", err);
-            } finally {
                 setLoading(false);
             }
         }
+
         if (slug) {
             fetchData();
         }

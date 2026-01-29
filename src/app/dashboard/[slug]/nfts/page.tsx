@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, use, useRef, useCallback } from "react";
-import { getNFTs, getCreatedNFTs, getCreatedNFTsCount, getCollectedNFTsCount, type NFT, getAccountDetails, getCollectionNFTs } from "@/lib/mx-api";
+import { getNFTs, getCreatedNFTs, getCreatedNFTsCount, getCollectedNFTsCount, type NFT, getAccountDetails, getCollectionNFTs, getCollection } from "@/lib/mx-api";
 import { NFTCard } from "@/components/nfts/NFTCard";
 import { NFTDetailModal } from "@/components/nfts/NFTDetailModal";
 import { NFTFolderCard } from "@/components/nfts/NFTFolderCard";
-import { ArrowLeft, Image as ImageIcon, Paintbrush, Loader2, Layers, Search, X } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Paintbrush, Loader2, Layers, Search, X, Share2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,12 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
     const [loadingMore, setLoadingMore] = useState(false);
     const [selectedNFTIdentifier, setSelectedNFTIdentifier] = useState<string | null>(null);
     const [openedCollection, setOpenedCollection] = useState<string | null>(null);
+
+    // Resolved Address for Sharing (Prioritize ERD)
+    const [resolvedAddress, setResolvedAddress] = useState<string>(slug);
+
+    // Collection Names Mapping
+    const [collectionNames, setCollectionNames] = useState<Record<string, string>>({});
 
     // Smart Folder State
     const [currentFolderNFTs, setCurrentFolderNFTs] = useState<NFT[]>([]);
@@ -69,7 +75,12 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
                 let targetAddress = slug;
                 if (!slug.startsWith("erd1")) {
                     const account = await getAccountDetails(slug);
-                    if (account) targetAddress = account.address;
+                    if (account) {
+                        targetAddress = account.address;
+                        setResolvedAddress(account.address);
+                    }
+                } else {
+                    setResolvedAddress(slug);
                 }
 
                 // Parallel Fetch for efficiency
@@ -121,15 +132,18 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
         }
     };
 
-    const handleLoadMore = async () => {
-        if (loadingMore) return;
+    const handleLoadMore = useCallback(async () => {
+        if (loadingMore || !resolvedAddress) return;
+
+        // Safety check: Don't fetch if address still looks like a herotag or is invalid
+        if (!resolvedAddress.startsWith("erd1")) {
+            console.warn("Skipping load more: Address not resolved properly", resolvedAddress);
+            return;
+        }
+
         setLoadingMore(true);
         try {
-            let targetAddress = slug;
-            if (!slug.startsWith("erd1")) {
-                const account = await getAccountDetails(slug);
-                if (account) targetAddress = account.address;
-            }
+            const targetAddress = resolvedAddress;
 
             if (activeTab === "collected") {
                 const currentLength = collectedNFTs.length;
@@ -145,7 +159,7 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
         } finally {
             setLoadingMore(false);
         }
-    };
+    }, [loadingMore, resolvedAddress, activeTab, collectedNFTs.length, createdNFTs.length]);
 
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
@@ -160,10 +174,42 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
         });
 
         if (node) observer.current.observe(node);
-    }, [loading, loadingMore, hasMore]);
+    }, [loading, loadingMore, hasMore, handleLoadMore]);
 
 
 
+
+    // Fetch Collection Names
+    useEffect(() => {
+        const fetchNames = async () => {
+            const missingIds = Object.keys(groupedNFTs).filter(id => !collectionNames[id] && id !== "Other");
+            if (missingIds.length === 0) return;
+
+            const newNames: Record<string, string> = {};
+            // Fetch in chunks or parallel? Let's do parallel with a limit if needed, 
+            // but for now simple Promise.all is okay as user rarely has 100s of collections *grouped* at once visible?
+            // Actually, displayedList updates on scroll? No, displayedList is full list filtered by search.
+            // groupedNFTs is derived from displayedList.
+
+            // Optimization: Only fetch for top X groups? Or fetch all. 
+            // Better to just fetch all displayed groups.
+
+            await Promise.all(missingIds.map(async (id) => {
+                const col = await getCollection(id);
+                if (col) {
+                    newNames[id] = col.name;
+                } else {
+                    newNames[id] = id; // Fallback to ID if failed
+                }
+            }));
+
+            setCollectionNames(prev => ({ ...prev, ...newNames }));
+        };
+
+        if (Object.keys(groupedNFTs).length > 0) {
+            fetchNames();
+        }
+    }, [groupedNFTs]); // collectionNames dependency omitted to avoid loop, we check keys inside
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -190,7 +236,7 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
                         {openedCollection ? (
                             <>
                                 <Layers className="h-6 w-6 text-[#FBBF24]" />
-                                {openedCollection}
+                                {collectionNames[openedCollection] || openedCollection}
                             </>
                         ) : (
                             <>
@@ -202,15 +248,13 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
 
                 {openedCollection && (
                     <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checking out my ${openedCollection} NFTs on Altair! 💎🚀\n\n`)}&url=${encodeURIComponent(`https://altairstar.vercel.app/gallery/${slug}/${openedCollection}`)}&hashtags=MultiversX,NFT,Altair`}
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checking out my ${collectionNames[openedCollection] || openedCollection} NFTs on OOX! 🧅 @onionxlabs`)}&url=${encodeURIComponent(`https://www.oox.art/profile/${resolvedAddress}?tab=nfts&collection=${openedCollection}`)}&hashtags=MultiversX,NFT,OOX`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-auto flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-white border border-slate-800 hover:bg-slate-900 transition-colors shadow-lg active:scale-95"
+                        className="ml-auto flex items-center gap-2 rounded-xl bg-[#FBBF24] px-4 py-2 text-[#0F172A] hover:bg-[#F59E0B] transition-all shadow-lg active:scale-95 font-bold"
                     >
-                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                        <span className="text-sm font-bold hidden sm:inline">Share Collection</span>
+                        <Share2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Share Collection</span>
                     </a>
                 )}
             </div>
@@ -336,7 +380,7 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
                                     return (
                                         <NFTFolderCard
                                             key={collectionName}
-                                            collectionName={collectionName}
+                                            collectionName={collectionNames[collectionName] || collectionName}
                                             nfts={nfts}
                                             onClick={() => handleOpenFolder(collectionName)}
                                         />

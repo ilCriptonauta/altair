@@ -4,6 +4,7 @@ import { useState } from "react";
 import { type NFT } from "@/lib/mx-api";
 import { ChevronDown, Tag, Layers, Calendar, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NFTMedia } from "./NFTMedia";
 
 interface NFTCardProps {
     nft: NFT;
@@ -11,10 +12,8 @@ interface NFTCardProps {
 
 export function NFTCard({ nft }: NFTCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
-    const [imageError, setImageError] = useState(false);
 
-    // Prefer thumbnail, fallback to url, fallback to media[0].url
-    const imageUrl = nft.media?.[0]?.thumbnailUrl || nft.url;
+    // Rank/Score Badge
 
     // Rank/Score Badge
     const renderRank = () => {
@@ -36,24 +35,15 @@ export function NFTCard({ nft }: NFTCardProps) {
         >
             {/* Image Container */}
             <div className="aspect-square w-full overflow-hidden bg-slate-900 relative">
-                {!imageError ? (
-                    <img
-                        src={imageUrl}
-                        alt={nft.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        onError={() => setImageError(true)}
-                        loading="lazy"
-                    />
-                ) : (
-                    <div className="flex h-full w-full items-center justify-center flex-col gap-2 text-slate-600">
-                        <ImageIcon className="h-8 w-8" />
-                        <span className="text-xs">No Image</span>
-                    </div>
-                )}
+                <NFTMedia
+                    nft={nft}
+                    className="h-full w-full group-hover:scale-105 transition-transform duration-500"
+                />
+
                 {renderRank()}
 
                 {/* Overlay Gradient on Hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             </div>
 
             {/* Content info */}
