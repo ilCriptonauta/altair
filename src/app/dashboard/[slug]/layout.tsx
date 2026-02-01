@@ -16,7 +16,12 @@ export default function DashboardLayout({
             <Sidebar slug={slug} />
             <MobileNav slug={slug} />
 
-            <div className="pb-24 sm:pb-0 sm:pl-20">
+            <div
+                className="sm:pb-0 sm:pl-20"
+                style={{
+                    paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))'
+                }}
+            >
                 <main className="mx-auto max-w-7xl p-4 sm:p-8 md:p-12">
                     {children}
                 </main>
@@ -24,3 +29,4 @@ export default function DashboardLayout({
         </div>
     );
 }
+
