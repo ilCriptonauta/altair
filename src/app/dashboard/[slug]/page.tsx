@@ -7,7 +7,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, Activity, Database, Server, Coins, Image as ImageIcon, Shield, ShieldAlert } from "lucide-react";
 import { Copy, Check, Share2, Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatBalance, formatAddress } from "@/lib/utils";
 import { NetworkStatsWidget } from "@/components/dashboard/NetworkStats";
 import { ChubberCard } from "@/components/dashboard/ChubberCard";
 import { SponsorshipBanner } from "@/components/dashboard/SponsorshipBanner";
@@ -60,8 +60,8 @@ export default function DashboardPage({ params }: { params: Promise<{ slug: stri
                 setAddress(account ? account.address : slug);
 
                 if (account) {
-                    const chubbers = await getCollectionNFTs(account.address, "CHBONX-3e0201");
-                    setChubberNfts(chubbers);
+                    // Start fetching Chubbers without awaiting before setting data
+                    getCollectionNFTs(account.address, "CHBONX-3e0201").then(setChubberNfts);
                 }
                 setLoading(false);
             } catch (err) {
@@ -73,7 +73,7 @@ export default function DashboardPage({ params }: { params: Promise<{ slug: stri
         if (slug) {
             fetchData();
         }
-    }, [slug]);
+    }, [slug, router]);
 
     const handleTransactionsClick = async () => {
         if (showDaysActive) {
@@ -151,10 +151,8 @@ export default function DashboardPage({ params }: { params: Promise<{ slug: stri
         return <div className="text-red-400">Account not found</div>;
     }
 
-    const formatBalance = (balance: string) => {
-        const val = Number(balance) / 10 ** 18;
-        return val.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
-    };
+    // Use centralized formatBalance from utils
+    const displayBalance = (balance: string) => formatBalance(balance, 18, 2);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -236,42 +234,41 @@ export default function DashboardPage({ params }: { params: Promise<{ slug: stri
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     label="Total Balance"
-                    value={`${formatBalance(data.balance)} EGLD`}
+                    value={`${displayBalance(data.balance)} EGLD`}
                     subValue="Available"
                     icon={Wallet}
-                    trend="+2.5%"
                 />
                 <StatsCard
                     label={showRewards ? "Claimable Rewards" : "Staked"}
-                    value={`${formatBalance(showRewards ? (data.claimableRewards || "0") : (data.activeStake || "0"))} EGLD`}
+                    value={`${displayBalance(showRewards ? (data.claimableRewards || "0") : (data.activeStake || "0"))} EGLD`}
                     subValue={showRewards ? "Click to view Staked" : "Click to view Rewards"}
                     icon={Database}
                     onClick={() => setShowRewards(!showRewards)}
-                    className={cn(showRewards && "border-green-500/50 bg-green-500/5")}
+                    className={cn(showRewards && "border-emerald-500/30 bg-emerald-500/5")}
                 />
                 <StatsCard
                     label={showDaysActive ? "Time Active" : "Transactions"}
                     value={
                         isLoadingDays ? "Loading..." :
                             showDaysActive ? `${daysActive ?? 0} Days` :
-                                (data.txCount?.toString() || "0")
+                                (data.txCount?.toLocaleString() || "0")
                     }
                     subValue={showDaysActive ? "Since first transaction" : "Click to see days active"}
                     icon={Activity}
                     onClick={handleTransactionsClick}
-                    className={cn(showDaysActive && "border-[#22D3EE]/50 bg-[#22D3EE]/5")}
+                    className={cn(showDaysActive && "border-[#22D3EE]/30 bg-[#22D3EE]/5")}
                 />
                 <StatsCard
                     label={showGuardian ? "Guardian Status" : "Shard"}
                     value={
                         isLoadingGuardian ? "Loading..." :
                             showGuardian ? (guardianData?.active ? "Active" : "Inactive") :
-                                `Shard ${data.shard}`
+                                `Shard ${data.shard ?? 0}`
                     }
                     subValue={showGuardian ? (guardianData?.active ? "Account Protected" : "No Guardian Set") : "Click to check Guardian"}
                     icon={showGuardian ? (guardianData?.active ? Shield : ShieldAlert) : Server}
                     onClick={handleShardClick}
-                    className={cn(showGuardian && (guardianData?.active ? "border-green-500/50 bg-green-500/5" : "border-red-500/50 bg-red-500/5"))}
+                    className={cn(showGuardian && (guardianData?.active ? "border-emerald-500/30 bg-emerald-500/5" : "border-rose-500/30 bg-rose-500/5"))}
                 />
             </div>
 

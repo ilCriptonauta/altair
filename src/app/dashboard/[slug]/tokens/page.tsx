@@ -3,8 +3,9 @@
 import { useEffect, useState, use } from "react";
 import { getTokens, type Token, getAccountDetails } from "@/lib/mx-api";
 import { TokenCard } from "@/components/tokens/TokenCard";
-import { ArrowLeft, Coins, Search, X } from "lucide-react";
+import { ArrowLeft, Coins, Search, X, LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
+import { cn, isValidAddress } from "@/lib/utils";
 
 export default function TokensPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = use(params);
@@ -90,55 +91,43 @@ export default function TokensPage({ params }: { params: Promise<{ slug: string 
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
+            {/* Premium Header */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+                <div className="flex items-center gap-5">
                     <Link
                         href={`/dashboard/${slug}`}
-                        className="rounded-full bg-[#1E293B]/50 p-2 text-slate-400 hover:bg-[#1E293B] hover:text-white transition-colors"
+                        className="group flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all duration-300"
                     >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-black text-white md:text-3xl flex items-center gap-2">
-                            My Tokens <Coins className="h-6 w-6 text-[#22D3EE] opacity-50" />
+                        <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                            Assets <Coins className="h-8 w-8 text-amber-400 dropdown-shadow-amber" />
                         </h1>
-                        <p className="text-slate-400 text-sm">Manage your ESDT assets ({tokens.length} total)</p>
+                        <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em]">{tokens.length} ESDT TOKENS FOUND</p>
                     </div>
                 </div>
 
-                {/* Search Bar */}
-                <div className="flex items-center rounded-full bg-[#1E293B]/50 border border-slate-800 p-1 relative overflow-hidden transition-all duration-300 h-10">
-                    {isSearchOpen ? (
-                        <div className="flex items-center w-full px-2 animate-in fade-in slide-in-from-right-5 duration-300">
-                            <Search className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                            <input
-                                autoFocus
-                                type="text"
-                                placeholder="Search tokens..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none outline-none text-white text-sm w-48 md:w-64 placeholder:text-slate-500"
-                            />
+                {/* Premium Search Bar */}
+                <div className="flex items-center w-full md:w-auto gap-3">
+                    <div className="relative group flex-grow md:flex-grow-0">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-amber-400 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Filter by name or ticker..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-12 w-full md:w-72 bg-white/5 border border-white/5 rounded-2xl pl-11 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400/50 focus:bg-white/10 transition-all"
+                        />
+                        {searchQuery && (
                             <button
-                                onClick={() => {
-                                    setIsSearchOpen(false);
-                                    setSearchQuery("");
-                                }}
-                                className="ml-2 p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
                             >
                                 <X className="h-4 w-4" />
                             </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => setIsSearchOpen(true)}
-                            className="flex items-center justify-center h-8 w-8 rounded-full text-slate-400 hover:text-white transition-colors hover:bg-white/5"
-                            title="Search Tokens"
-                        >
-                            <Search className="h-4 w-4" />
-                        </button>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 

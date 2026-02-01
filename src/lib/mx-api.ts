@@ -1,8 +1,14 @@
 import { ProxyNetworkProvider } from "@multiversx/sdk-network-providers";
+import { isValidAddress } from "./utils";
 
 // Using the mainnet public API
-const API_URL = "https://api.multiversx.com";
-const GATEWAY_URL = "https://gateway.multiversx.com";
+export const API_CONFIG = {
+    url: "https://api.multiversx.com",
+    gateway: "https://gateway.multiversx.com",
+    explorer: "https://explorer.multiversx.com"
+};
+
+const API_URL = API_CONFIG.url;
 
 export interface AccountDetails {
     address: string;
@@ -10,7 +16,7 @@ export interface AccountDetails {
     balance: string;
     username?: string;
     shard?: number;
-    txCount?: number; // active transaction count or similar metric
+    txCount?: number;
     developerReward?: string;
     activeStake?: string;
     claimableRewards?: string;
@@ -38,112 +44,73 @@ export async function getXSpotlightProfile(address: string): Promise<{ image: st
 
 /**
  * Fetches account details from the MultiversX API.
- * Handles Herotag resolution if the input is not a direct address (simple check).
+ * Handles Herotag resolution if the input is not a direct address.
  */
 export async function getAccountDetails(identifier: string): Promise<AccountDetails | null> {
     try {
         let address = identifier;
         let accountData: AccountDetails | null = null;
 
-        // basic herotag heuristic
-        if (!identifier.startsWith("erd1")) {
-            // 1. Try exact username first (API follows redirects to /accounts/{address})
+        // Herotag resolution
+        if (!isValidAddress(identifier)) {
+            // 1. Try exact username first
             let res = await fetch(`${API_URL}/usernames/${identifier}`);
 
-            // 2. If 404 and identifier doesn't have a dot, try appending .elrond
+            // 2. Fallback to .elrond if not found
             if (!res.ok && res.status === 404 && !identifier.includes(".")) {
-                const fallback = identifier + ".elrond";
-                res = await fetch(`${API_URL}/usernames/${fallback}`);
+                res = await fetch(`${API_URL}/usernames/${identifier}.elrond`);
             }
 
             if (res.ok) {
-                // API redirects /usernames/{name} -> /accounts/{address}
-                // So we get the full account details back directly
                 accountData = await res.json() as AccountDetails;
                 address = accountData.address;
             } else {
-                // If still failing, return null or try generic lookup (which will probably fail if it's not an address)
                 console.warn(`Failed to resolve username ${identifier}`);
                 return null;
             }
         } else {
             const response = await fetch(`${API_URL}/accounts/${address}`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    return null; // Account not found
-                }
-                throw new Error(`Failed to fetch account: ${response.statusText}`);
-            }
-
+            if (!response.ok) return null;
             accountData = await response.json();
         }
 
-        if (accountData) {
-            // Fetch Delegation Data to map activeStake
-            try {
-                // Ensure address is correct
-                const delegationRes = await fetch(`${API_URL}/accounts/${address}/delegation`, { cache: 'no-store' });
-                if (delegationRes.ok) {
-                    const delegationData = await delegationRes.json();
-                    let totalStake = 0n;
-                    let totalRewards = 0n;
-                    if (Array.isArray(delegationData)) {
-                        for (const item of delegationData) {
-                            if (item.userActiveStake) {
-                                totalStake += BigInt(item.userActiveStake);
-                            }
-                            if (item.claimableRewards) {
-                                totalRewards += BigInt(item.claimableRewards);
-                            }
-                        }
+        if (accountData && address) {
+            // Parallel fetch for extra data to minimize latency
+            const [delegationRes, txCountRes, fungibleRes, metaRes, totalNftsRes] = await Promise.allSettled([
+                fetch(`${API_URL}/accounts/${address}/delegation`, { cache: 'no-store' }),
+                fetch(`${API_URL}/accounts/${address}/transactions/count`, { cache: 'no-store' }),
+                fetch(`${API_URL}/accounts/${address}/tokens/count?type=FungibleESDT`, { cache: 'no-store' }),
+                fetch(`${API_URL}/accounts/${address}/nfts/count?type=MetaESDT`, { cache: 'no-store' }),
+                fetch(`${API_URL}/accounts/${address}/nfts/count`, { cache: 'no-store' })
+            ]);
+
+            // Handle Delegation
+            if (delegationRes.status === 'fulfilled' && delegationRes.value.ok) {
+                const delegationData = await delegationRes.value.json();
+                let totalStake = 0n;
+                let totalRewards = 0n;
+                if (Array.isArray(delegationData)) {
+                    for (const item of delegationData) {
+                        totalStake += BigInt(item.userActiveStake || 0);
+                        totalRewards += BigInt(item.claimableRewards || 0);
                     }
-                    accountData.activeStake = totalStake.toString();
-                    accountData.claimableRewards = totalRewards.toString();
-                } else {
-                    console.warn("Delegation fetch failed:", delegationRes.status);
                 }
-            } catch (e) {
-                console.error("Failed to fetch delegation data", e);
+                accountData.activeStake = totalStake.toString();
+                accountData.claimableRewards = totalRewards.toString();
             }
 
-            // Fetch Transaction Count
-            try {
-                const txCountRes = await fetch(`${API_URL}/accounts/${address}/transactions/count`, { cache: 'no-store' });
-                if (txCountRes.ok) {
-                    const count = await txCountRes.json();
-                    accountData.txCount = Number(count);
-                }
-            } catch (e) {
-                console.error("Failed to fetch tx count", e);
+            // Handle Tx Count
+            if (txCountRes.status === 'fulfilled' && txCountRes.value.ok) {
+                accountData.txCount = Number(await txCountRes.value.json());
             }
 
-            // Fetch Counts according to Explorer Logic:
-            // Tokens = FungibleESDT + MetaESDT
-            // NFTs = NonFungibleESDT (excluding MetaESDT which are technically non-fungible on API but shown as tokens on Explorer)
+            // Handle Token/NFT Counts (Explorer Logic)
+            const fungibleCount = (fungibleRes.status === 'fulfilled' && fungibleRes.value.ok) ? Number(await fungibleRes.value.json()) : 0;
+            const metaCount = (metaRes.status === 'fulfilled' && metaRes.value.ok) ? Number(await metaRes.value.json()) : 0;
+            const totalNftsCount = (totalNftsRes.status === 'fulfilled' && totalNftsRes.value.ok) ? Number(await totalNftsRes.value.json()) : 0;
 
-            try {
-                // We need 3 separate counts
-                const [fungibleRes, metaRes, totalNftsRes] = await Promise.all([
-                    fetch(`${API_URL}/accounts/${address}/tokens/count?type=FungibleESDT`, { cache: 'no-store' }),
-                    fetch(`${API_URL}/accounts/${address}/nfts/count?type=MetaESDT`, { cache: 'no-store' }),
-                    fetch(`${API_URL}/accounts/${address}/nfts/count`, { cache: 'no-store' }) // Total NFTs including SFTs, Meta, etc.
-                ]);
-
-                const fungibleCount = fungibleRes.ok ? Number(await fungibleRes.json()) : 0;
-                const metaCount = metaRes.ok ? Number(await metaRes.json()) : 0;
-                const totalNftsCount = totalNftsRes.ok ? Number(await totalNftsRes.json()) : 0;
-
-                // Tokens = Fungible + Meta (Explorer Logic)
-                accountData.tokenCount = fungibleCount + metaCount;
-
-                // NFTs = Total NFTs - Meta (Explorer Logic)
-                // Explorer counts SFTs as NFTs, but moves MetaESDTs to Tokens tab.
-                accountData.nftCount = Math.max(0, totalNftsCount - metaCount);
-
-            } catch (e) {
-                console.error("Failed to fetch token/nft counts", e);
-            }
+            accountData.tokenCount = fungibleCount + metaCount;
+            accountData.nftCount = Math.max(0, totalNftsCount - metaCount);
         }
 
         return accountData;

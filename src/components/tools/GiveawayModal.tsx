@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { X, Crown, Copy, ExternalLink, RefreshCw, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Crown, Copy, ExternalLink, RefreshCw, Trophy, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatAddress } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface GiveawayModalProps {
     winnerAddress: string;
@@ -20,35 +21,26 @@ export function GiveawayModal({ winnerAddress, herotag, onClose, onRedraw, type 
     const [displayHerotag, setDisplayHerotag] = useState(herotag);
     const [isRolling, setIsRolling] = useState(false);
 
-    // Confetti trigger
     const triggerConfetti = () => {
-        const duration = 3000;
+        const duration = 4000;
         const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+        const defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 1000, colors: ['#FBBF24', '#FFFFFF', '#06B6D4'] };
 
-        const randomInRange = (min: number, max: number) => {
-            return Math.random() * (max - min) + min;
-        }
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
         const interval: any = setInterval(function () {
             const timeLeft = animationEnd - Date.now();
-
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
-            }
-
-            const particleCount = 50 * (timeLeft / duration);
+            if (timeLeft <= 0) return clearInterval(interval);
+            const particleCount = 60 * (timeLeft / duration);
             confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
             confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
         }, 250);
     };
 
-    // Initial mount confetti
     useEffect(() => {
         triggerConfetti();
     }, []);
 
-    // Effect to update display when winner changes (stops rolling)
     useEffect(() => {
         if (!isRolling) {
             setDisplayAddress(winnerAddress);
@@ -58,30 +50,21 @@ export function GiveawayModal({ winnerAddress, herotag, onClose, onRedraw, type 
 
     const handleRedraw = () => {
         setIsRolling(true);
-        onRedraw(); // Trigger parent calculation (will update props)
-
-        // Start scrambling animation
+        onRedraw();
         const startTime = Date.now();
-        const duration = 1500; // Animation duration (min rolling time)
+        const duration = 2000;
 
         const interval = setInterval(() => {
-            // Generate random fake address
             const randomChars = Array(58).fill(0).map(() => Math.random().toString(36)[2]).join('');
             setDisplayAddress(`erd1${randomChars.substring(0, 58)}`);
-            setDisplayHerotag(undefined); // Hide herotag during roll
-
-            // We only stop if duration passed AND we have a new winner (props updated could happen anytime)
-            // But here we rely on the parent updating the props, which will be reflected AFTER isRolling is set to false.
-            // Actually, we should just run for fixed duration then unlock.
-            // The parent updates `winnerAddress` but we ignore it while `isRolling` is true due to the effect dependency.
+            setDisplayHerotag(undefined);
 
             if (Date.now() - startTime > duration) {
                 clearInterval(interval);
                 setIsRolling(false);
-                // When isRolling becomes false, the effect [winnerAddress, isRolling] will fire and update displayAddress to the NEW winner.
                 triggerConfetti();
             }
-        }, 50);
+        }, 40);
     };
 
     const handleCopy = () => {
@@ -91,123 +74,139 @@ export function GiveawayModal({ winnerAddress, herotag, onClose, onRedraw, type 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4 sm:pb-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-3xl bg-black/80">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 cursor-pointer"
+                onClick={onClose}
+            />
 
             <motion.div
-                initial={{ scale: 0.5, opacity: 0, y: -50 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.5, opacity: 0, y: 50 }}
-                className="relative w-full max-w-md bg-[#0F172A] border border-[#22D3EE]/30 rounded-3xl p-8 shadow-2xl overflow-hidden"
+                initial={{ scale: 0.8, opacity: 0, y: 40, rotateX: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0, rotateX: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 40 }}
+                transition={{ type: "spring", damping: 20, stiffness: 200 }}
+                className="relative w-full max-w-lg bg-[#0F172A] border border-white/10 rounded-[3rem] p-10 shadow-[0_0_100px_rgba(251,191,36,0.15)] overflow-hidden"
             >
-                {/* Background Glow Effect */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#22D3EE]/20 blur-[100px] rounded-full pointer-events-none" />
+                {/* Visual Background Elements */}
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-amber-400/10 blur-[120px]" />
+                    <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-amber-400/5 blur-[80px] rounded-full" />
+                </div>
 
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"
-                >
+                <button onClick={onClose} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors z-20 h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/5">
                     <X className="h-6 w-6" />
                 </button>
 
-                <div className="relative flex flex-col items-center text-center space-y-6">
-
-                    {/* Crown Icon */}
+                <div className="relative flex flex-col items-center text-center space-y-8 z-10">
+                    {/* Icon Stack */}
                     <div className="relative">
                         <motion.div
-                            initial={{ y: -20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2, type: "spring" }}
-                            key={isRolling ? "rolling" : winnerAddress} // Re-animate on winner change
+                            animate={isRolling ? {
+                                rotateY: [0, 360, 720],
+                                scale: [1, 1.1, 1]
+                            } : {
+                                y: [0, -10, 0],
+                            }}
+                            transition={isRolling ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 4, repeat: Infinity, ease: "easeInOut" }}
                         >
-                            <Crown className="h-20 w-20 text-[#FBBF24] drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]" />
+                            <Trophy className="h-28 w-28 text-amber-400 filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
                         </motion.div>
                         <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="absolute -top-2 -right-2 bg-[#22D3EE] text-[#0F172A] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="absolute -top-4 -right-4 bg-white text-black text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-2xl flex items-center gap-1.5"
                         >
-                            Winner
+                            <Sparkles className="h-3 w-3" />
+                            Elite
                         </motion.div>
                     </div>
 
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                            {isRolling ? "Drawing..." : "Congratulations!"}
+                    <div className="space-y-3">
+                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">
+                            {isRolling ? "Rolling the Dice" : "WE HAVE A WINNER"}
                         </h2>
-                        <p className="text-slate-400 text-sm">
-                            {type === "balanced" ? "Random selection (Equal Chance)" : "Weighted selection (Token Heavy)"}
+                        <p className="text-amber-400/60 text-xs font-black uppercase tracking-[0.3em]">
+                            {type === "balanced" ? "FAIR SHUFFLE PROTOCOL" : "WEIGHTED QUANTUM SELECTION"}
                         </p>
                     </div>
 
-                    {/* Winner Address Card */}
-                    <div className="w-full bg-[#1E293B]/50 border border-slate-700 rounded-xl p-4 flex items-center justify-between group hover:border-[#22D3EE]/50 transition-colors">
-                        <div className="flex flex-col items-start gap-1 overflow-hidden text-left w-full">
-                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                                {displayHerotag ? "Herotag" : "Address"}
+                    {/* Winner Address Display */}
+                    <div className="w-full bg-black/40 border border-white/5 rounded-[2rem] p-8 flex flex-col items-center gap-6 relative group overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        <div className="flex flex-col items-center gap-2 w-full">
+                            <span className="text-[10px] text-slate-600 uppercase font-black tracking-[0.2em]">
+                                Holder Identity
                             </span>
+
                             {displayHerotag ? (
-                                <div className="flex flex-col w-full">
-                                    <span className="font-bold text-[#22D3EE] text-xl md:text-2xl truncate w-full">
+                                <div className="flex flex-col items-center">
+                                    <span className="font-black text-amber-400 text-3xl sm:text-4xl tracking-tighter uppercase break-all">
                                         @{displayHerotag}
                                     </span>
-                                    <span className="text-[10px] text-slate-500 font-mono break-all leading-tight mt-1">
-                                        {formatAddress(displayAddress, 6, 6)}
+                                    <span className="text-[10px] text-slate-600 font-mono font-bold mt-2 tracking-widest">
+                                        {formatAddress(displayAddress, 8, 8)}
                                     </span>
                                 </div>
                             ) : (
-                                <span className="font-mono text-[#22D3EE] font-bold text-lg md:text-xl break-all w-full">
-                                    {isRolling ?
-                                        // Fake format during rolling, full visible
-                                        `${displayAddress.substring(0, 12)}...${displayAddress.substring(displayAddress.length - 12)}`
-                                        : formatAddress(displayAddress, 12, 12)
-                                    }
+                                <span className="font-mono text-amber-400 font-black text-xl sm:text-2xl break-all">
+                                    {isRolling ? displayAddress.substring(0, 16) + "..." : formatAddress(displayAddress, 16, 16)}
                                 </span>
                             )}
                         </div>
+
                         {!isRolling && (
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                            <div className="flex items-center gap-3">
                                 <button
                                     onClick={handleCopy}
-                                    className="p-2 rounded-lg bg-[#0F172A] text-slate-400 hover:text-white hover:bg-slate-700 transition-colors relative"
-                                    title="Copy Address"
+                                    className="h-12 w-12 rounded-2xl bg-white/5 text-slate-400 hover:text-white hover:bg-amber-400/20 hover:border-amber-400/30 border border-white/5 transition-all flex items-center justify-center relative"
+                                    title="Copy"
                                 >
-                                    <Copy className="h-4 w-4" />
-                                    {isCopied && (
-                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#22D3EE] text-[#0F172A] text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                                            Copied!
-                                        </span>
-                                    )}
+                                    <Copy className="h-5 w-5" />
+                                    <AnimatePresence>
+                                        {isCopied && (
+                                            <motion.span
+                                                initial={{ y: 0, opacity: 0 }}
+                                                animate={{ y: -45, opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="absolute bg-amber-400 text-black text-[10px] font-black px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap"
+                                            >
+                                                COPIED
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
                                 </button>
                                 <a
                                     href={`https://explorer.multiversx.com/accounts/${winnerAddress}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-2 rounded-lg bg-[#0F172A] text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                                    title="View on Explorer"
+                                    className="h-12 w-12 rounded-2xl bg-white/5 text-slate-400 hover:text-white hover:bg-amber-400/20 hover:border-amber-400/30 border border-white/5 transition-all flex items-center justify-center"
+                                    title="Explorer"
                                 >
-                                    <ExternalLink className="h-4 w-4" />
+                                    <ExternalLink className="h-5 w-5" />
                                 </a>
                             </div>
                         )}
                     </div>
 
-                    {/* Footer Actions */}
-                    <div className="flex gap-3 w-full pt-2">
+                    {/* Controls */}
+                    <div className="flex gap-4 w-full pt-4">
                         <button
                             onClick={handleRedraw}
                             disabled={isRolling}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-slate-700 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]"
+                            className="flex-1 flex items-center justify-center gap-3 h-16 rounded-[1.5rem] bg-white/5 hover:bg-white/10 border border-white/5 text-white font-black uppercase tracking-widest transition-all disabled:opacity-20 active:scale-95 group"
                         >
-                            <RefreshCw className={`h-4 w-4 ${isRolling ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
-                            Redraw
+                            <RefreshCw className={cn("h-5 w-5", isRolling && "animate-spin")} />
+                            <span>REDRAW</span>
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-3 rounded-xl bg-[#22D3EE] hover:bg-[#06B6D4] text-[#0F172A] font-bold transition-colors shadow-lg shadow-[#22D3EE]/20 hover:shadow-[#22D3EE]/40 active:scale-[0.98]"
+                            className="flex-1 h-16 rounded-[1.5rem] bg-amber-400 hover:bg-amber-300 text-[#0F172A] font-black uppercase tracking-widest transition-all shadow-2xl shadow-amber-400/20 active:scale-95"
                         >
-                            Close
+                            FINALIZE
                         </button>
                     </div>
                 </div>

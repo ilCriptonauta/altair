@@ -5,9 +5,9 @@ import { getNFTs, getCreatedNFTs, getCreatedNFTsCount, getCollectedNFTsCount, ty
 import { NFTCard } from "@/components/nfts/NFTCard";
 import { NFTDetailModal } from "@/components/nfts/NFTDetailModal";
 import { NFTFolderCard } from "@/components/nfts/NFTFolderCard";
-import { ArrowLeft, Image as ImageIcon, Paintbrush, Loader2, Layers, Search, X, Share2 } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Paintbrush, Loader2, Layers, Search, X, Share2, Filter } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, isValidAddress } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
@@ -71,23 +71,21 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
         async function fetchData() {
             try {
                 setLoading(true);
-                // First resolve address if it's a herotag
                 let targetAddress = slug;
-                if (!slug.startsWith("erd1")) {
+
+                // Resolve address if it's not a direct Bech32
+                if (!isValidAddress(slug)) {
                     const account = await getAccountDetails(slug);
                     if (account) {
                         targetAddress = account.address;
-                        setResolvedAddress(account.address);
                     }
-                } else {
-                    setResolvedAddress(slug);
                 }
+                setResolvedAddress(targetAddress);
 
-                // Parallel Fetch for efficiency
-                // We fetch both to show counts immediately (nice UX)
+                // Full parallel fetch for lists and counts
                 const [collected, created, cCount, crCount] = await Promise.all([
-                    getNFTs(targetAddress, PAGE_SIZE, 0),       // Limit initial size for perf
-                    getCreatedNFTs(targetAddress, PAGE_SIZE, 0), // Limit initial size for perf
+                    getNFTs(targetAddress, PAGE_SIZE, 0),
+                    getCreatedNFTs(targetAddress, PAGE_SIZE, 0),
                     getCollectedNFTsCount(targetAddress),
                     getCreatedNFTsCount(targetAddress)
                 ]);
@@ -214,36 +212,42 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-20">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-4">
-                {openedCollection ? (
-                    <button
-                        onClick={() => setOpenedCollection(null)}
-                        className="rounded-full bg-[#1E293B]/50 p-2 text-slate-400 hover:bg-[#1E293B] hover:text-white transition-colors flex items-center gap-2"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                ) : (
-                    <Link
-                        href={`/dashboard/${slug}`}
-                        className="rounded-full bg-[#1E293B]/50 p-2 text-slate-400 hover:bg-[#1E293B] hover:text-white transition-colors"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Link>
-                )}
+            <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 group">
+                <div className="flex items-center gap-5">
+                    {openedCollection ? (
+                        <button
+                            onClick={() => setOpenedCollection(null)}
+                            className="h-14 w-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-400 hover:bg-cyan-400 hover:text-[#0F172A] hover:border-cyan-400 transition-all shadow-2xl active:scale-90 group/back"
+                        >
+                            <ArrowLeft className="h-6 w-6 group-hover/back:-translate-x-1 transition-transform" />
+                        </button>
+                    ) : (
+                        <Link
+                            href={`/dashboard/${slug}`}
+                            className="h-14 w-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-400 hover:bg-cyan-400 hover:text-[#0F172A] hover:border-cyan-400 transition-all shadow-2xl active:scale-90 group/back"
+                        >
+                            <ArrowLeft className="h-6 w-6 group-hover/back:-translate-x-1 transition-transform" />
+                        </Link>
+                    )}
 
-                <div>
-                    <h1 className="text-2xl font-black text-white md:text-3xl flex items-center gap-2">
-                        {openedCollection ? (
-                            <>
-                                <Layers className="h-6 w-6 text-[#FBBF24]" />
-                                {collectionNames[openedCollection] || openedCollection}
-                            </>
-                        ) : (
-                            <>
-                                Gallery <ImageIcon className="h-6 w-6 text-[#22D3EE] opacity-50" />
-                            </>
-                        )}
-                    </h1>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-400/60">Digital Assets</span>
+                        </div>
+                        <h1 className="text-3xl font-black text-white md:text-4xl flex items-center gap-3 tracking-tighter uppercase leading-none">
+                            {openedCollection ? (
+                                <>
+                                    {collectionNames[openedCollection] || openedCollection}
+                                    <Layers className="h-8 w-8 text-cyan-400 opacity-20" />
+                                </>
+                            ) : (
+                                <>
+                                    Gallery <ImageIcon className="h-8 w-8 text-cyan-400 opacity-20" />
+                                </>
+                            )}
+                        </h1>
+                    </div>
                 </div>
 
                 {openedCollection && (
@@ -251,90 +255,73 @@ export default function NFTsPage({ params }: { params: Promise<{ slug: string }>
                         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checking out my ${collectionNames[openedCollection] || openedCollection} NFTs on OOX! 🧅 @onionxlabs`)}&url=${encodeURIComponent(`https://www.oox.art/profile/${resolvedAddress}?tab=nfts&collection=${openedCollection}`)}&hashtags=MultiversX,NFT,OOX`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-auto flex items-center gap-2 rounded-xl bg-[#FBBF24] px-4 py-2 text-[#0F172A] hover:bg-[#F59E0B] transition-all shadow-lg active:scale-95 font-bold"
+                        className="md:ml-auto flex items-center justify-center gap-3 rounded-2xl bg-cyan-400 px-8 py-4 text-[#0F172A] hover:bg-white transition-all shadow-2xl shadow-cyan-400/20 active:scale-95 font-black uppercase tracking-widest text-xs"
                     >
                         <Share2 className="h-4 w-4" />
-                        <span className="hidden sm:inline">Share Collection</span>
+                        <span>Share Gallery</span>
                     </a>
                 )}
             </div>
 
-            {/* Tabs Navigation (Pill Style) - Hide when folder is open? Or keep to switch context? Keep but maybe disabled or hidden for cleanliness */}
+            {/* Premium Filter/Search/Tabs Bar */}
             {!openedCollection && (
-                <div className="flex justify-center mb-8">
-                    <div className="flex rounded-full bg-[#1E293B] p-1 border border-slate-800/50 relative overflow-hidden transition-all duration-300">
-                        {isSearchOpen ? (
-                            <div className="flex items-center w-full px-2 animate-in fade-in slide-in-from-right-5 duration-300">
-                                <Search className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    placeholder="Search by name, collection or ID..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="bg-transparent border-none outline-none text-white text-sm w-64 placeholder:text-slate-500"
-                                />
-                                <button
-                                    onClick={() => {
-                                        setIsSearchOpen(false);
-                                        setSearchQuery("");
-                                    }}
-                                    className="ml-2 p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                                >
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#1E293B]/20 border border-white/5 p-3 rounded-3xl backdrop-blur-3xl relative overflow-hidden group/bar">
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-cyan-400/5 blur-[100px] pointer-events-none" />
+
+                    <div className="flex rounded-2xl bg-black/40 p-1.5 border border-white/5 relative z-10 w-full sm:w-auto">
+                        <button
+                            onClick={() => setActiveTab("collected")}
+                            className={cn(
+                                "flex-1 sm:flex-none flex items-center justify-center gap-3 rounded-xl px-8 py-3 text-xs font-black uppercase tracking-widest transition-all",
+                                activeTab === "collected"
+                                    ? "bg-cyan-400 text-[#0F172A] shadow-xl shadow-cyan-400/20"
+                                    : "text-slate-500 hover:text-white hover:bg-white/5"
+                            )}
+                        >
+                            <span>Collected</span>
+                            <span className={cn(
+                                "rounded-lg px-2 py-0.5 text-[10px] font-black",
+                                activeTab === "collected" ? "bg-black/10 text-[#0F172A]" : "bg-white/5 text-slate-600"
+                            )}>
+                                {collectedCount}
+                            </span>
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("created")}
+                            className={cn(
+                                "flex-1 sm:flex-none flex items-center justify-center gap-3 rounded-xl px-8 py-3 text-xs font-black uppercase tracking-widest transition-all",
+                                activeTab === "created"
+                                    ? "bg-cyan-400 text-[#0F172A] shadow-xl shadow-cyan-400/20"
+                                    : "text-slate-500 hover:text-white hover:bg-white/5"
+                            )}
+                        >
+                            <span>Created</span>
+                            <span className={cn(
+                                "rounded-lg px-2 py-0.5 text-[10px] font-black",
+                                activeTab === "created" ? "bg-black/10 text-[#0F172A]" : "bg-white/5 text-slate-600"
+                            )}>
+                                {createdCount}
+                            </span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto relative z-10">
+                        <div className="relative flex-grow group/search">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within/search:text-cyan-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Filter results..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full sm:w-80 bg-black/40 border border-white/5 rounded-2xl py-3.5 pl-12 pr-12 text-sm text-white font-bold placeholder:text-slate-700 focus:outline-none focus:border-cyan-400/50 transition-all focus:ring-1 focus:ring-cyan-400/20"
+                            />
+                            {searchQuery && (
+                                <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors">
                                     <X className="h-4 w-4" />
                                 </button>
-                            </div>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={() => setActiveTab("collected")}
-                                    className={cn(
-                                        "flex items-center gap-2 rounded-full px-6 py-2 text-sm font-bold transition-all",
-                                        activeTab === "collected"
-                                            ? "bg-[#FBBF24] text-[#0F172A] shadow-md"
-                                            : "text-slate-400 hover:text-white"
-                                    )}
-                                >
-                                    <span>Collected</span>
-                                    <span className={cn(
-                                        "rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
-                                        activeTab === "collected"
-                                            ? "bg-[#0F172A]/10 text-[#0F172A]"
-                                            : "bg-slate-800 text-slate-500"
-                                    )}>
-                                        {collectedCount}
-                                    </span>
-                                </button>
-
-                                <button
-                                    onClick={() => setActiveTab("created")}
-                                    className={cn(
-                                        "flex items-center gap-2 rounded-full px-6 py-2 text-sm font-bold transition-all",
-                                        activeTab === "created"
-                                            ? "bg-[#FBBF24] text-[#0F172A] shadow-md"
-                                            : "text-slate-400 hover:text-white"
-                                    )}
-                                >
-                                    <span>Created</span>
-                                    <span className={cn(
-                                        "rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
-                                        activeTab === "created"
-                                            ? "bg-[#0F172A]/10 text-[#0F172A]"
-                                            : "bg-slate-800 text-slate-500"
-                                    )}>
-                                        {createdCount}
-                                    </span>
-                                </button>
-
-                                <button
-                                    onClick={() => setIsSearchOpen(true)}
-                                    className="flex items-center justify-center rounded-full px-4 py-2 text-slate-400 hover:text-white transition-colors hover:bg-white/5"
-                                    title="Search NFTs"
-                                >
-                                    <Search className="h-4 w-4" />
-                                </button>
-                            </>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
