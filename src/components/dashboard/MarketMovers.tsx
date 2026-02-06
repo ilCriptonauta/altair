@@ -12,12 +12,29 @@ export function MarketMovers() {
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
-            const data = await getMarketMovers();
-            setGainers(data.gainers);
-            setLosers(data.losers);
-            setLoading(false);
+            try {
+                const response = await fetch('/api/market-movers');
+                if (response.ok) {
+                    const data = await response.json();
+                    setGainers(data.gainers || []);
+                    setLosers(data.losers || []);
+                } else {
+                    // Fallback to direct call if API route fails
+                    const data = await getMarketMovers();
+                    setGainers(data.gainers);
+                    setLosers(data.losers);
+                }
+            } catch (error) {
+                console.error("Error fetching movers:", error);
+            } finally {
+                setLoading(false);
+            }
         }
         fetchData();
+
+        // Refresh every 5 minutes
+        const interval = setInterval(fetchData, 5 * 60 * 1000);
+        return () => clearInterval(interval);
     }, []);
 
     const formatPrice = (price: number) => {

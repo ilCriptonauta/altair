@@ -713,45 +713,45 @@ export interface MarketMover {
 
 export async function getMarketMovers(): Promise<{ gainers: MarketMover[], losers: MarketMover[] }> {
     try {
-        // Fetch trade pairs from xExchange (all pairs, not just core, to include community tokens like OLV, ONX)
-        const response = await fetch(`${API_URL}/mex-pairs?size=1000`, { cache: 'no-store' });
+        // Fetch tokens from MEX API (more concise than mex-pairs)
+        const response = await fetch(`${API_URL}/mex/tokens?size=1000`, { cache: 'no-store' });
         if (!response.ok) return { gainers: [], losers: [] };
 
         const data = await response.json();
 
         const movers: MarketMover[] = data
-            .filter((pair: any) => {
-                // Filter out pairs with low volume or invalid data to avoid noise
-                return pair.state === 'active' &&
-                    pair.volume24h > 10000 && // Min $10k daily volume
-                    pair.basePrice > 0 &&
-                    pair.basePrevious24hPrice > 0;
+            .filter((t: any) => {
+                // Filter tokens with some volume and price data
+                const volume = t.volume24h || t.previous24hVolume || 0;
+                return t.price > 0 && t.previous24hPrice > 0 && volume > 5000;
             })
-            .map((pair: any) => {
-                // Calculate change based on the BASE token (which is what we are tracking against WEGLD usually)
-                const currentPrice = pair.basePrice;
-                const prevPrice = pair.basePrevious24hPrice;
-                const change = ((currentPrice - prevPrice) / prevPrice) * 100;
+            .map((t: any) => {
+                const change = ((t.price - t.previous24hPrice) / t.previous24hPrice) * 100;
 
                 return {
-                    identifier: pair.baseId,
-                    ticker: pair.baseSymbol,
-                    price: currentPrice,
+                    identifier: t.id,
+                    ticker: t.symbol,
+                    price: t.price,
                     change24h: change,
-                    volume24h: pair.volume24h,
-                    image: `https://tools.multiversx.com/assets-cdn/tokens/${pair.baseId}/icon.png`
+                    volume24h: t.volume24h || t.previous24hVolume || 0,
+                    image: `https://tools.multiversx.com/assets-cdn/tokens/${t.id}/icon.png`
                 };
             });
 
-        // Remove duplicates (same token might be in multiple pairs)
-        const uniqueMovers = Array.from(new Map(movers.map((m: MarketMover) => [m.identifier, m])).values()) as MarketMover[];
+        // Separate and Sort
+        const allSorted = movers.sort((a, b) => b.change24h - a.change24h);
 
-        // Sort by change
-        const sorted = uniqueMovers.sort((a, b) => b.change24h - a.change24h);
+        // Ensure gainers are positive and losers are negative if possible, or just top/bottom 5
+        const gainers = allSorted.slice(0, 5);
+        const losers = allSorted.slice(-5).reverse();
+
+        // Safety check: if they overlap (total tokens < 10), filter them out
+        const resultGainers = gainers;
+        const resultLosers = losers.filter(l => !resultGainers.find(g => g.identifier === l.identifier));
 
         return {
-            gainers: sorted.slice(0, 5),
-            losers: sorted.slice(-5).reverse() // Bottom 5, reversed to show worst first
+            gainers: resultGainers,
+            losers: resultLosers
         };
 
     } catch (error) {
